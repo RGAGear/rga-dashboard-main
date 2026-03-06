@@ -6,15 +6,15 @@
   "private": true,
   "license": "MIT",
   "scripts": {
-    "build": "cross-env NODE_OPTIONS=--max-old-space-size=1024 nest build",
-    "start": "node --max-old-space-size=1024 dist/main",
-    "start:dev": "cross-env NODE_OPTIONS=--max-old-space-size=1024 nest start --watch",
-    "start:dev:prod": "cross-env NODE_OPTIONS=--max-old-space-size=1024 nest build && node --max-old-space-size=1024 dist/main",
-    "start:prod": "node --max-old-space-size=1024 dist/main",
+    "build": "cross-env NODE_OPTIONS=\"\" nest build",
+    "start": "node dist/main",
+    "start:dev": "node dist/main",
+    "start:dev:prod": "node dist/main",
+    "start:prod": "node dist/main",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
-    "test:e2e": "cross-env NODE_OPTIONS=--max-old-space-size=1024 jest --testRegex='.e2e.spec.ts$' --runInBand --forceExit"
+    "test:e2e": "jest --testRegex='.e2e.spec.ts$' --runInBand --forceExit"
   },
   "dependencies": {
     "@faker-js/faker": "^10.2.0",
