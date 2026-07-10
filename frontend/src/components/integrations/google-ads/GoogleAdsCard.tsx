@@ -43,8 +43,15 @@ export function GoogleAdsCard({ platform }: GoogleAdsCardProps) {
         const statusParam = searchParams.get('status');
         const tempTokenParam = searchParams.get('tempToken');
         const errorParam = searchParams.get('error');
+        const platformParam = searchParams.get('platform');
 
-        if (errorParam) {
+        const isGoogleAdsCallback = [
+            'ads',
+            'google',
+            'google-ads',
+        ].includes(platformParam || '');
+
+        if (errorParam && isGoogleAdsCallback) {
             const errorMessage = decodeURIComponent(errorParam);
             console.error('OAuth Error:', errorMessage);
             toast.error(`Connection failed: ${errorMessage}`);
@@ -53,7 +60,7 @@ export function GoogleAdsCard({ platform }: GoogleAdsCardProps) {
             const newUrl = window.location.pathname;
             window.history.replaceState({}, '', newUrl);
 
-        } else if (statusParam === 'select_account' && tempTokenParam) {
+        } else if (isGoogleAdsCallback && statusParam === 'select_account' && tempTokenParam) {
             fetchTempAccounts(tempTokenParam);
         }
     }, [searchParams, fetchTempAccounts]);

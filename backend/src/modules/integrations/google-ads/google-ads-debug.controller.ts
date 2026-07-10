@@ -1,6 +1,8 @@
 import { Controller, Get, Param, Logger } from '@nestjs/common';
 import { GoogleAdsApiService } from './services/google-ads-api.service';
 import { PrismaService } from '../../prisma/prisma.service';
+import { ConfigService } from '@nestjs/config';
+import { normalizeEnvValue, resolveGoogleOAuthRedirectUri } from '../../../common/utils/google-oauth.util';
 
 @Controller('debug-ads')
 export class GoogleAdsDebugController {
@@ -9,13 +11,16 @@ export class GoogleAdsDebugController {
   constructor(
     private readonly apiService: GoogleAdsApiService,
     private readonly prisma: PrismaService,
+    private readonly configService: ConfigService,
   ) { }
+
+  
 
   /**
    * 🔎 ระบบวินิจฉัยพิเศษ: เข้าได้โดยไม่ต้อง Login และไม่ต้องมี /api/v1
-   * เรียกใช้: https://[โดเมน]/debug-ads/:customerId
+   * เรียกใช้: https://[โดเมน]/debug-ads/verify/:customerId
    */
-  @Get(':customerId')
+  @Get('verify/:customerId')
   async verifyApi(@Param('customerId') customerId: string) {
     const cleanId = customerId.replace(/-/g, '');
     this.logger.log(`[Diagnostic-ROOT] Verifying API for customer ${cleanId}`);
@@ -42,5 +47,73 @@ export class GoogleAdsDebugController {
             stack: e.stack
         };
     }
+  }
+
+  /**
+   * Dev-only: show masked Google OAuth config (client IDs, redirect URI)
+   * Use this to verify that runtime env matches your Google Cloud credentials.
+   */
+  @Get('config')
+  async debugConfig() {
+    const env = process.env.NODE_ENV || 'development';
+    const adsClientId = normalizeEnvValue(this.configService.get<string>('GOOGLE_ADS_CLIENT_ID')) || null;
+    const adsClientSecret = normalizeEnvValue(this.configService.get<string>('GOOGLE_ADS_CLIENT_SECRET')) || null;
+    const clientId = normalizeEnvValue(this.configService.get<string>('GOOGLE_CLIENT_ID')) || null;
+    const clientSecret = normalizeEnvValue(this.configService.get<string>('GOOGLE_CLIENT_SECRET')) || null;
+
+    const redirectUri = resolveGoogleOAuthRedirectUri(this.configService, 'GOOGLE_REDIRECT_URI_ADS', '/auth/google/ads/callback');
+
+    const mask = (v: string | null) => {
+      if (!v) return null;
+      if (v.length <= 8) return '****';
+      return `${v.slice(0, 4)}...${v.slice(-4)}`;
+    };
+
+    // Only expose detailed info in non-production environments
+    if (env === 'production') {
+      return { ok: false, error: 'Not available in production' };
+    }
+
+    return {
+      ok: true,
+      nodeEnv: env,
+      adsClientIdMasked: mask(adsClientId),
+      adsClientSecretPresent: !!adsClientSecret,
+      clientIdMasked: mask(clientId),
+      clientSecretPresent: !!clientSecret,
+      redirectUri,
+    };
+  }
+
+  // Alternative unambiguous route to fetch runtime OAuth values
+  @Get('runtime-config')
+  async debugRuntimeConfig() {
+    const env = process.env.NODE_ENV || 'development';
+    const adsClientId = normalizeEnvValue(this.configService.get<string>('GOOGLE_ADS_CLIENT_ID')) || null;
+    const adsClientSecret = normalizeEnvValue(this.configService.get<string>('GOOGLE_ADS_CLIENT_SECRET')) || null;
+    const clientId = normalizeEnvValue(this.configService.get<string>('GOOGLE_CLIENT_ID')) || null;
+    const clientSecret = normalizeEnvValue(this.configService.get<string>('GOOGLE_CLIENT_SECRET')) || null;
+
+    const redirectUri = resolveGoogleOAuthRedirectUri(this.configService, 'GOOGLE_REDIRECT_URI_ADS', '/auth/google/ads/callback');
+
+    const mask = (v: string | null) => {
+      if (!v) return null;
+      if (v.length <= 8) return '****';
+      return `${v.slice(0, 4)}...${v.slice(-4)}`;
+    };
+
+    if (env === 'production') {
+      return { ok: false, error: 'Not available in production' };
+    }
+
+    return {
+      ok: true,
+      nodeEnv: env,
+      adsClientIdMasked: mask(adsClientId),
+      adsClientSecretPresent: !!adsClientSecret,
+      clientIdMasked: mask(clientId),
+      clientSecretPresent: !!clientSecret,
+      redirectUri,
+    };
   }
 }

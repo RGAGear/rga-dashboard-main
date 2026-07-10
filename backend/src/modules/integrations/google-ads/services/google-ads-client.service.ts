@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import axios from 'axios';
 import { google } from 'googleapis';
+import { normalizeEnvValue, resolveGoogleOAuthRedirectUri } from '../../../../common/utils/google-oauth.util';
 
 @Injectable()
 export class GoogleAdsClientService {
@@ -15,11 +16,20 @@ export class GoogleAdsClientService {
    * 🔑 Get fresh Access Token
    */
   async getAccessToken(refreshToken: string): Promise<string> {
-    const clientId = this.configService.get('GOOGLE_ADS_CLIENT_ID') || this.configService.get('GOOGLE_CLIENT_ID');
-    const clientSecret = this.configService.get('GOOGLE_ADS_CLIENT_SECRET') || this.configService.get('GOOGLE_CLIENT_SECRET');
+    const adsClientId = normalizeEnvValue(this.configService.get('GOOGLE_ADS_CLIENT_ID'));
+    const adsClientSecret = normalizeEnvValue(this.configService.get('GOOGLE_ADS_CLIENT_SECRET'));
+    const clientId = adsClientId || normalizeEnvValue(this.configService.get('GOOGLE_CLIENT_ID'));
+    const clientSecret = adsClientSecret || normalizeEnvValue(this.configService.get('GOOGLE_CLIENT_SECRET'));
 
     if (!clientId || !clientSecret) {
       throw new Error('Missing Google OAuth client credentials for Ads');
+    }
+
+    if (adsClientId && !adsClientSecret) {
+      throw new Error('GOOGLE_ADS_CLIENT_ID is set but GOOGLE_ADS_CLIENT_SECRET is missing');
+    }
+    if (adsClientSecret && !adsClientId) {
+      throw new Error('GOOGLE_ADS_CLIENT_SECRET is set but GOOGLE_ADS_CLIENT_ID is missing');
     }
 
     const oauth2Client = new google.auth.OAuth2(clientId, clientSecret);
@@ -198,9 +208,13 @@ export class GoogleAdsClientService {
 
   async getAccessTokenFromCode(code: string): Promise<any> {
     const oauth2Client = new google.auth.OAuth2(
-      this.configService.get('GOOGLE_CLIENT_ID'),
-      this.configService.get('GOOGLE_CLIENT_SECRET'),
-      this.configService.get('GOOGLE_REDIRECT_URI_ADS'),
+      normalizeEnvValue(this.configService.get('GOOGLE_CLIENT_ID')),
+      normalizeEnvValue(this.configService.get('GOOGLE_CLIENT_SECRET')),
+      resolveGoogleOAuthRedirectUri(
+        this.configService,
+        'GOOGLE_REDIRECT_URI_ADS',
+        '/auth/google/ads/callback',
+      ),
     );
     const { tokens } = await oauth2Client.getToken(code);
     return tokens;

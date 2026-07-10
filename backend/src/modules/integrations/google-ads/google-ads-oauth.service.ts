@@ -10,6 +10,15 @@ import { v4 as uuidv4 } from 'uuid';
 import { UnifiedSyncService } from '../../sync/unified-sync.service';
 import { AdPlatform } from '@prisma/client';
 import { EncryptionService } from '../../../common/services/encryption.service';
+import { normalizeEnvValue, resolveGoogleOAuthRedirectUri } from '../../../common/utils/google-oauth.util';
+
+function mask(value: string | undefined, head = 8, tail = 0) {
+  if (!value) return '';
+  if (value.length <= head + tail) return value.replace(/.(?=.{4})/g, '*');
+  const start = value.slice(0, head);
+  const end = tail ? value.slice(-tail) : '';
+  return `${start}...${end}`;
+}
 
 @Injectable()
 export class GoogleAdsOAuthService {
@@ -30,17 +39,35 @@ export class GoogleAdsOAuthService {
    * Prevents Singleton State Pollution / Race Conditions
    */
   private createOAuthClient() {
-    const clientId = this.configService.get('GOOGLE_ADS_CLIENT_ID') || this.configService.get('GOOGLE_CLIENT_ID');
-    const clientSecret = this.configService.get('GOOGLE_ADS_CLIENT_SECRET') || this.configService.get('GOOGLE_CLIENT_SECRET');
+    const adsClientId = normalizeEnvValue(this.configService.get('GOOGLE_ADS_CLIENT_ID'));
+    const adsClientSecret = normalizeEnvValue(this.configService.get('GOOGLE_ADS_CLIENT_SECRET'));
+    const clientId = adsClientId || normalizeEnvValue(this.configService.get('GOOGLE_CLIENT_ID'));
+    const clientSecret = adsClientSecret || normalizeEnvValue(this.configService.get('GOOGLE_CLIENT_SECRET'));
+
     if (!clientId || !clientSecret) {
       throw new Error('Missing Google Ads OAuth client credentials');
     }
 
-    return new google.auth.OAuth2(
+    if (adsClientId && !adsClientSecret) {
+      throw new Error('GOOGLE_ADS_CLIENT_ID is set but GOOGLE_ADS_CLIENT_SECRET is missing');
+    }
+    if (adsClientSecret && !adsClientId) {
+      throw new Error('GOOGLE_ADS_CLIENT_SECRET is set but GOOGLE_ADS_CLIENT_ID is missing');
+    }
+
+    const redirectUri = resolveGoogleOAuthRedirectUri(
+      this.configService,
+      'GOOGLE_REDIRECT_URI_ADS',
+      '/auth/google/ads/callback',
+    );
+
+    const oauthClient = new google.auth.OAuth2(
       clientId,
       clientSecret,
-      this.configService.get('GOOGLE_REDIRECT_URI_ADS'),
+      redirectUri,
     );
+    this.logger.log(`[GoogleAdsOAuth] Using clientId=${mask(clientId)} redirectUri=${redirectUri}`);
+    return oauthClient;
   }
 
   async generateAuthUrl(userId: string, tenantId: string): Promise<string> {
@@ -75,7 +102,24 @@ export class GoogleAdsOAuthService {
 
       // Exchange code for tokens
       const oauth2Client = this.createOAuthClient();
-      const { tokens } = await oauth2Client.getToken(code);
+      this.logger.log(`[GoogleAdsOAuth] Exchanging authorization code for tokens`);
+      let tokens;
+      try {
+        ({ tokens } = await oauth2Client.getToken(code));
+      } catch (error: any) {
+        this.logger.error('[GoogleAdsOAuth] getToken failed', error?.response || error?.message || error);
+        // Persist provider error payload for debugging (DO NOT LOG SECRETS)
+        try {
+          const detail = error?.response?.data ? JSON.stringify(error.response.data) : (error?.message || String(error));
+          require('fs').appendFileSync('oauth_error.log', new Date().toISOString() + ' | getToken error: ' + detail + '\n');
+        } catch (e) {}
+        if (error?.response?.data?.error === 'invalid_client' || error?.message?.includes('invalid_client')) {
+          throw new BadRequestException(
+            'ไม่สามารถยืนยัน OAuth client ได้: ตรวจสอบ client_id / client_secret ให้ตรงกันกับ Google Cloud OAuth client ที่ใช้งานอยู่'
+          );
+        }
+        throw error;
+      }
 
       // --- DIAGNOSTIC TRAP START ---
       try {

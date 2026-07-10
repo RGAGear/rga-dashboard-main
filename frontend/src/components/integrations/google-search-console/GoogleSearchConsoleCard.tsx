@@ -52,8 +52,13 @@ export function GoogleSearchConsoleCard({ platform }: GoogleSearchConsoleCardPro
         const errorParam = searchParams.get('error');
         const platformParam = searchParams.get('platform');
 
-        // Only handle if platform is google-search-console
-        if (platformParam === 'google-search-console') {
+        const isGSCBCallback = [
+            'search-console',
+            'google-search-console',
+            'gsc',
+        ].includes(platformParam || '');
+
+        if (isGSCBCallback) {
             if (errorParam) {
                 const errorMessage = decodeURIComponent(errorParam);
                 console.error('OAuth Error:', errorMessage);

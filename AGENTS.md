@@ -101,6 +101,40 @@ This document provides context and guidelines for agents working on the RGA (Ret
 - Migrations: `backend/prisma/migrations/`
 - Check schema: `backend/prisma.config.ts`
 
+## Working Protocol for Agents
+
+When handling a new implementation task, follow this order consistently:
+
+1. **Inspect the project structure**
+   - Review relevant folders, configs, and existing modules before making changes.
+   - Confirm where the feature belongs and what dependencies already exist.
+
+2. **Plan before coding**
+   - Break the task into small steps.
+   - Identify affected files, risks, and verification steps before editing.
+
+3. **Implement code step by step**
+   - Make small, focused changes.
+   - Avoid bundling unrelated edits into a single pass.
+
+4. **Run tests**
+   - Execute relevant test commands after each logical change.
+   - If there are no targeted tests, run the closest available suite.
+
+5. **Run build**
+   - Verify that the project still builds after implementation.
+
+6. **Fix any errors found**
+   - Address failures directly and trace the root cause before applying a workaround.
+
+7. **Re-check after fixes**
+   - Re-run tests and build again to confirm the issue is resolved.
+
+8. **Summarize changes and risks**
+   - Report which files were changed and what should be watched carefully during rollout or future maintenance.
+
+This workflow should be followed for backend, frontend, database, and integration work unless the task is explicitly trivial.
+
 ## Code Style & Conventions
 
 - **Language**: TypeScript (strict mode)

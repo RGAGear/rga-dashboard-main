@@ -156,4 +156,8 @@ export const envValidationSchema = Joi.object({
     GSC_SERVICE_ACCOUNT_JSON: Joi.string().optional(),
     GSC_SERVICE_ACCOUNT_KEY_FILE: Joi.string().optional(),
     GSC_SITE_URL: Joi.string().optional(),
+
+    // Hybrid multi-tenant database routing
+    TENANT_DB_URL_PREFIX: Joi.string().optional(),
+    TENANT_DIRECT_URL_PREFIX: Joi.string().optional(),
 });

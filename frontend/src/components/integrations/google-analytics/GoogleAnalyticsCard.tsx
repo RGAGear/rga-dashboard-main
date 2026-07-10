@@ -47,8 +47,12 @@ export function GoogleAnalyticsCard({ platform }: GoogleAnalyticsCardProps) {
         const errorParam = searchParams.get('error');
         const platformParam = searchParams.get('platform');
 
-        // Only handle if platform is ga4
-        if (platformParam === 'ga4') {
+        const isGA4Callback = [
+            'ga4',
+            'google-analytics',
+        ].includes(platformParam || '');
+
+        if (isGA4Callback) {
             if (errorParam) {
                 const errorMessage = decodeURIComponent(errorParam);
                 console.error('OAuth Error:', errorMessage);

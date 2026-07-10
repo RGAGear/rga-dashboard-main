@@ -364,15 +364,27 @@ export function DashboardPage() {
 
                 {/* Metrics Grid */}
                 <section className="w-full dashboard-metrics">
-                    <div className="flex items-center gap-2 mb-4">
-                        <h3 className="text-base font-semibold sm:text-lg">
-                            {t('page.sections.keyPerformanceMetrics')}
-                        </h3>
-                        <InfoTooltip
-                            content={t(
-                                'page.sections.keyPerformanceMetricsTooltip'
-                            )}
-                        />
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+                        <div className="flex items-center gap-2">
+                            <h3 className="text-base font-semibold sm:text-lg">
+                                {t('page.sections.keyPerformanceMetrics')}
+                            </h3>
+                            <InfoTooltip
+                                content={t(
+                                    'page.sections.keyPerformanceMetricsTooltip'
+                                )}
+                            />
+                        </div>
+                        <div className="flex items-center justify-end">
+                            <DashboardDateFilter
+                                value={period}
+                                onValueChange={handlePeriodChange}
+                                customRange={customRange}
+                                onCustomRangeChange={setCustomRange}
+                                weekStartsOn={weekStartsOn}
+                                onWeekStartsOnChange={setWeekStartsOn}
+                            />
+                        </div>
                     </div>
                     <DashboardMetrics
                         summary={data?.summary}
@@ -417,12 +429,6 @@ export function DashboardPage() {
                                 <TrendChart
                                     className="md:h-[460px] 2xl:h-[400px] trend-chart"
                                     data={data?.trends ?? []}
-                                    period={period}
-                                    onPeriodChange={handlePeriodChange}
-                                    customRange={customRange}
-                                    onCustomRangeChange={setCustomRange}
-                                    weekStartsOn={weekStartsOn}
-                                    onWeekStartsOnChange={setWeekStartsOn}
                                 />
                             )}
                         </div>

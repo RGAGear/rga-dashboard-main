@@ -455,9 +455,11 @@ function normalizePlatformId(platform: string): PlatformId | null {
     const map: Record<string, PlatformId> = {
         google: 'google',
         ads: 'google', // Legacy: platform=ads means Google Ads
+        'google-ads': 'google',
         'google-analytics': 'google-analytics',
         ga4: 'google-analytics',
         'search-console': 'search-console',
+        'google-search-console': 'search-console',
         gsc: 'search-console',
         facebook: 'facebook',
         tiktok: 'tiktok',

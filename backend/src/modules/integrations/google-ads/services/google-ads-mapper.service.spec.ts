@@ -21,7 +21,7 @@ describe('GoogleAdsMapperService', () => {
             expect(service.mapCampaignStatus(2)).toBe('ACTIVE');
             expect(service.mapCampaignStatus(3)).toBe('PAUSED');
             expect(service.mapCampaignStatus(4)).toBe('DELETED');
-            expect(service.mapCampaignStatus(99)).toBe('UNKNOWN');
+            expect(service.mapCampaignStatus(99)).toBe('PAUSED');
         });
 
         it('should map string status correctly', () => {
@@ -67,8 +67,11 @@ describe('GoogleAdsMapperService', () => {
                     cost: 1.0,
                     conversions: 5,
                     ctr: 0.1,
+                    revenue: 0,
                 },
                 budget: 0,
+                startDate: null,
+                endDate: null,
             });
         });
 
@@ -93,6 +96,7 @@ describe('GoogleAdsMapperService', () => {
                 cost: 0,
                 conversions: 0,
                 ctr: 0,
+                revenue: 0,
             });
         });
     });

@@ -4,3 +4,7 @@ export * from './traffic-by-location';
 export * from './seo-performance-chart';
 export * from './organic-keywords-by-intent';
 export * from './ads-connection-status';
+export * from './ga4-device-breakdown';
+export * from './ga4-top-landing-pages';
+export * from './gsc-top-pages';
+export * from './gsc-device-performance';
